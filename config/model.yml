@@ -1,0 +1,170 @@
+# Declarative model configuration.
+#
+# Nothing in the code hard-codes a company, an XBRL tag or a driver assumption.
+# The splices below are the heart of the ingestion problem: each financial line
+# is reported under more than one tag across the history, and each splice
+# carries an overlap window where both tags are live. That overlap is what lets
+# the pipeline *verify* a splice instead of assuming it.
+
+company:
+  name: Costco Wholesale Corporation
+  ticker: COST
+  cik: 909832
+  fiscal_year_end_month: 9   # Costco's fiscal year ends in late August / early September
+
+edgar:
+  base_url: https://data.sec.gov/api/xbrl
+  # The SEC returns 403 without a User-Agent that identifies a real contact.
+  # This is a documented requirement of their fair-access policy, not a
+  # scraping workaround.
+  user_agent: "Sergio Alegre sjalegre39@gmail.com"
+  # Annual figures only, taken from 10-K filings. Facts are matched on their
+  # own period (`start`/`end`), never on the filing's `fy`/`fp` fields: Costco
+  # tags its FY2019 annual revenue as `fp=Q4`, so an `fp=FY` filter silently
+  # drops a whole year. See docs/extraction-notes.md.
+  form: "10-K"
+  min_period_days: 330
+  max_period_days: 400
+  first_year: 2008
+
+# Each line is a list of candidate tags, newest-preferred first. The splicer
+# walks them in order, and where two tags both report a year it checks that
+# they agree before trusting either.
+lines:
+  revenue:
+    kind: flow
+    tags: [RevenueFromContractWithCustomerExcludingAssessedTax, Revenues]
+  cost_of_sales:
+    kind: flow
+    tags: [CostOfGoodsAndServicesSold, CostOfGoodsSold]
+  sganda:
+    kind: flow
+    tags: [SellingGeneralAndAdministrativeExpense]
+  operating_income:
+    kind: flow
+    tags: [OperatingIncomeLoss]
+  interest_expense:
+    kind: flow
+    tags: [InterestExpense]
+  tax_expense:
+    kind: flow
+    tags: [IncomeTaxExpenseBenefit]
+  net_income:
+    kind: flow
+    tags: [NetIncomeLoss]
+
+  total_assets:
+    kind: stock
+    tags: [Assets]
+  current_assets:
+    kind: stock
+    tags: [AssetsCurrent]
+  total_liabilities:
+    kind: stock
+    tags: [Liabilities]
+  current_liabilities:
+    kind: stock
+    tags: [LiabilitiesCurrent]
+  equity:
+    kind: stock
+    tags: [StockholdersEquity]
+  cash:
+    kind: stock
+    tags: [CashAndCashEquivalentsAtCarryingValue]
+  inventory:
+    kind: stock
+    tags: [InventoryNet]
+  # Costco reports receivables under `ReceivablesNetCurrent`; the more common
+  # `AccountsReceivableNetCurrent` is absent from its filings entirely.
+  receivables:
+    kind: stock
+    tags: [ReceivablesNetCurrent, AccountsReceivableNetCurrent]
+  payables:
+    kind: stock
+    tags: [AccountsPayableCurrent]
+  ppe_net:
+    kind: stock
+    tags: [PropertyPlantAndEquipmentNet]
+  long_term_debt:
+    kind: stock
+    tags: [LongTermDebtNoncurrent]
+  # Reported separately from StockholdersEquity, which excludes it. Without
+  # this line the accounting identity fails by exactly the minority stake:
+  # $514m in 2021 and $5m in 2022, falling to zero once Costco bought out the
+  # non-controlling interest in its Taiwanese subsidiary. Absent in years with
+  # no minority interest, so it is not a required line.
+  minority_interest:
+    kind: stock
+    tags: [MinorityInterest]
+
+  # 2015 and 2016 are missing from the headline cash-flow tag and present only
+  # under the "continuing operations" variant.
+  cfo:
+    kind: flow
+    tags: [NetCashProvidedByUsedInOperatingActivities,
+           NetCashProvidedByUsedInOperatingActivitiesContinuingOperations]
+  cfi:
+    kind: flow
+    tags: [NetCashProvidedByUsedInInvestingActivities,
+           NetCashProvidedByUsedInInvestingActivitiesContinuingOperations]
+  cff:
+    kind: flow
+    tags: [NetCashProvidedByUsedInFinancingActivities,
+           NetCashProvidedByUsedInFinancingActivitiesContinuingOperations]
+  depreciation:
+    kind: flow
+    tags: [DepreciationDepletionAndAmortization]
+  capex:
+    kind: flow
+    tags: [PaymentsToAcquirePropertyPlantAndEquipment]
+
+# How far apart two tags may be in an overlap year and still count as the same
+# line. Zero means they must agree exactly; the revenue splice does, and a
+# tolerance that forgives disagreement would defeat the purpose of checking.
+splice:
+  tolerance_abs: 0.0
+  min_overlap_years: 1
+
+# Drivers are measured from history, not invented. `lookback_years` is how many
+# recent years the base case averages over.
+drivers:
+  lookback_years: 3
+  forecast_years: 3
+
+scenarios:
+  base:
+    label: Base
+    description: Drivers held at their recent historical average.
+    deltas: {}
+  upside:
+    label: Upside
+    description: Faster growth and modest operating leverage.
+    deltas:
+      revenue_growth: +0.02
+      gross_margin: +0.005
+      sganda_ratio: -0.003
+  downside:
+    label: Downside
+    description: Growth stalls, margin compresses, working capital worsens.
+    deltas:
+      revenue_growth: -0.03
+      gross_margin: -0.010
+      sganda_ratio: +0.005
+      dio_days: +3.0
+      dso_days: +1.0
+
+# Which drivers the tornado chart shocks, and by how much, one at a time.
+sensitivity:
+  shock:
+    revenue_growth: 0.02
+    gross_margin: 0.01
+    sganda_ratio: 0.005
+    dio_days: 5.0
+    dpo_days: 5.0
+    capex_intensity: 0.005
+
+backtest:
+  # Fit drivers on everything up to and including `origin`, forecast the next
+  # `horizon` years, then score against what actually happened.
+  horizons: [1, 2, 3]
+  min_history_years: 5

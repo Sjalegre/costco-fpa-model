@@ -1,0 +1,17 @@
+# Build outputs, reproducible with `python -m fpa build`.
+data/
+!docs/
+
+__pycache__/
+*.py[cod]
+.pytest_cache/
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,24 @@
+[project]
+name = "costco-fpa-model"
+version = "1.0.0"
+description = "Driver-based three-statement FP&A model built from SEC XBRL filings, with its own forecast error measured"
+requires-python = ">=3.11"
+dependencies = ["requests>=2.31", "PyYAML>=6.0", "Jinja2>=3.1", "certifi>=2024.7.4"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0"]
+
+[project.scripts]
+fpa = "fpa.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
+addopts = "-q"

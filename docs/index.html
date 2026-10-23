@@ -1,0 +1,983 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Costco Wholesale Corporation (COST) - driver-based FP&amp;A model</title>
+<style>
+  :root {
+    --bg:#fff; --fg:#16191d; --muted:#5c6672; --line:#e3e7ec; --zebra:#f7f9fb;
+    --pass:#17795e; --pass-bg:#e6f4ef; --warn:#8a5a00; --warn-bg:#fdf3e0;
+    --fail:#b02a1f; --fail-bg:#fdecea; --accent:#1f4e79; --bar:#4a86c5;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171a; --fg:#e8ecf1; --muted:#9aa5b1; --line:#2a2f36;
+      --zebra:#191d21; --pass:#4cc79f; --pass-bg:#16302a; --warn:#e0a33c;
+      --warn-bg:#33280f; --fail:#f1786c; --fail-bg:#3a1d1a; --accent:#7fb2e5;
+      --bar:#5d9bd8; }
+  }
+  *{box-sizing:border-box}
+  body{margin:0;padding:2rem 1.25rem 4rem;background:var(--bg);color:var(--fg);
+    font:15px/1.55 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1100px;margin:0 auto}
+  h1{font-size:1.6rem;margin:0 0 .25rem;letter-spacing:-.01em}
+  h2{font-size:1.05rem;margin:2.5rem 0 .7rem}
+  .sub{color:var(--muted);margin:0 0 1.8rem;font-size:.9rem}
+  .cards{display:grid;gap:.75rem;grid-template-columns:repeat(auto-fit,minmax(150px,1fr))}
+  .card{border:1px solid var(--line);border-radius:8px;padding:.9rem 1rem}
+  .card .n{font-size:1.55rem;font-weight:650;line-height:1.1}
+  .card .l{color:var(--muted);font-size:.76rem;text-transform:uppercase;
+    letter-spacing:.04em;margin-top:.2rem}
+  .card.ok .n{color:var(--pass)} .card.bad .n{color:var(--fail)}
+  .scroll{overflow-x:auto;border:1px solid var(--line);border-radius:8px}
+  table{border-collapse:collapse;width:100%;font-size:.86rem}
+  th,td{text-align:right;padding:.5rem .7rem;border-bottom:1px solid var(--line);
+    white-space:nowrap}
+  th:first-child,td:first-child{text-align:left}
+  th{font-weight:600;color:var(--muted);font-size:.72rem;text-transform:uppercase;
+    letter-spacing:.04em}
+  tbody tr:nth-child(even){background:var(--zebra)}
+  tbody tr:last-child td{border-bottom:none}
+  tr.fc td{color:var(--accent);font-style:italic}
+  code{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.92em}
+  .pill{display:inline-block;padding:.08rem .45rem;border-radius:4px;font-size:.72rem;
+    font-weight:650}
+  .pill.pass{color:var(--pass);background:var(--pass-bg)}
+  .pill.error{color:var(--fail);background:var(--fail-bg)}
+  .pill.warning{color:var(--warn);background:var(--warn-bg)}
+  .pill.info{color:var(--muted);background:var(--line)}
+  .note{border-left:3px solid var(--accent);padding:.55rem 0 .55rem .9rem;
+    color:var(--muted);margin:1rem 0;font-size:.89rem}
+  .bar{height:12px;background:var(--bar);border-radius:2px;display:inline-block;
+    vertical-align:middle}
+  footer{margin-top:3rem;color:var(--muted);font-size:.79rem;border-top:1px solid var(--line);
+    padding-top:1rem}
+</style>
+</head>
+<body><div class="wrap">
+  <h1>Costco Wholesale Corporation (COST)</h1>
+  <p class="sub">Driver-based three-statement model &middot; 2009&ndash;2026 reported,
+    3 years forecast &middot; generated 2026-10-23 19:25 UTC</p>
+
+  <div class="cards">
+    <div class="card"><div class="n">18</div><div class="l">Years reported</div></div>
+    <div class="card ok">
+      <div class="n">37/38</div><div class="l">Checks passed</div></div>
+    <div class="card ok">
+      <div class="n">0.00</div><div class="l">Worst balance gap</div></div>
+    <div class="card"><div class="n">4.0%</div><div class="l">Revenue error, 1yr</div></div>
+    <div class="card"><div class="n">7.8%</div><div class="l">Naive baseline</div></div>
+  </div>
+
+  <div class="note">
+    Nothing in the forecast is plugged. Cash is an output of the cash-flow
+    statement and the balance sheet is assembled independently, so the identity
+    check below is a real test of the model rather than a restatement of it.
+    This is a modelling exercise, not investment advice.
+  </div>
+
+  <h2>Integrity checks</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Status</th><th>Check</th><th>Expected</th><th>Observed</th></tr></thead>
+    <tbody>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>splice.revenue.Revenues</code>
+          <div style="color:var(--muted)">RevenueFromContractWithCustomerExcludingAssessedTax &lt;- Revenues</div></td>
+        <td style="text-align:left">the two tags agree on every year they share</td>
+        <td style="text-align:left">agree on all 10 overlapping years (2016-2025)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>splice.cost_of_sales.CostOfGoodsSold</code>
+          <div style="color:var(--muted)">CostOfGoodsAndServicesSold &lt;- CostOfGoodsSold</div></td>
+        <td style="text-align:left">the two tags agree on every year they share</td>
+        <td style="text-align:left">agree on all 2 overlapping years (2016-2017)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>splice.cfo.NetCashProvidedByUsedInOperatingActivitiesContinuingOperations</code>
+          <div style="color:var(--muted)">NetCashProvidedByUsedInOperatingActivities &lt;- NetCashProvidedByUsedInOperatingActivitiesContinuingOperations</div></td>
+        <td style="text-align:left">the two tags agree on every year they share</td>
+        <td style="text-align:left">agree on all 4 overlapping years (2013-2018)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>splice.cfi.NetCashProvidedByUsedInInvestingActivitiesContinuingOperations</code>
+          <div style="color:var(--muted)">NetCashProvidedByUsedInInvestingActivities &lt;- NetCashProvidedByUsedInInvestingActivitiesContinuingOperations</div></td>
+        <td style="text-align:left">the two tags agree on every year they share</td>
+        <td style="text-align:left">agree on all 4 overlapping years (2013-2018)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>splice.cff.NetCashProvidedByUsedInFinancingActivitiesContinuingOperations</code>
+          <div style="color:var(--muted)">NetCashProvidedByUsedInFinancingActivities &lt;- NetCashProvidedByUsedInFinancingActivitiesContinuingOperations</div></td>
+        <td style="text-align:left">the two tags agree on every year they share</td>
+        <td style="text-align:left">agree on all 4 overlapping years (2013-2018)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.revenue</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.cost_of_sales</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.sganda</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.operating_income</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.tax_expense</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.net_income</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.total_assets</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.total_liabilities</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.equity</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.cash</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.inventory</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.receivables</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.payables</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.ppe_net</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.long_term_debt</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">18 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.depreciation</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>gaps.capex</code>
+          </td>
+        <td style="text-align:left">no interior gaps</td>
+        <td style="text-align:left">19 continuous years</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill info">info</span></td>
+        <td><code>sourcing.vintage_alignment</code>
+          <div style="color:var(--muted)">a restated line paired with an un-restated one breaks the identity</div></td>
+        <td style="text-align:left">every year already consistent across filings</td>
+        <td style="text-align:left">1 year(s) realigned: 2014: realigned to 0000909832-15-000014 (total_assets 32,662,000,000 -&gt; 33,024,000,000)</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>identity.balance_sheet.reported</code>
+          </td>
+        <td style="text-align:left">|assets - (liabilities + equity + minority)| &lt;= 0.01</td>
+        <td style="text-align:left">worst gap 0.00 in 2009</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>identity.balance_sheet.forecast</code>
+          </td>
+        <td style="text-align:left">|assets - (liabilities + equity + minority)| &lt;= 0.01</td>
+        <td style="text-align:left">worst gap 0.00 in 2028</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>identity.cash_flow</code>
+          </td>
+        <td style="text-align:left">CFO + CFI + CFF equals the change in cash</td>
+        <td style="text-align:left">reconciles exactly</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.gross_margin</code>
+          </td>
+        <td style="text-align:left">within [0.0, 1.0]</td>
+        <td style="text-align:left">0.1276</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.sganda_ratio</code>
+          </td>
+        <td style="text-align:left">within [0.0, 1.0]</td>
+        <td style="text-align:left">0.0900</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.tax_rate</code>
+          </td>
+        <td style="text-align:left">within [0.0, 0.6]</td>
+        <td style="text-align:left">0.2473</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.payout_ratio</code>
+          </td>
+        <td style="text-align:left">within [-2.0, 3.0]</td>
+        <td style="text-align:left">0.5970</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.dso_days</code>
+          </td>
+        <td style="text-align:left">within [0.0, 180.0]</td>
+        <td style="text-align:left">4.3058</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.dio_days</code>
+          </td>
+        <td style="text-align:left">within [0.0, 365.0]</td>
+        <td style="text-align:left">28.2874</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.dpo_days</code>
+          </td>
+        <td style="text-align:left">within [0.0, 365.0]</td>
+        <td style="text-align:left">31.0604</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.capex_intensity</code>
+          </td>
+        <td style="text-align:left">within [0.0, 0.5]</td>
+        <td style="text-align:left">0.0199</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.driver.revenue_growth</code>
+          </td>
+        <td style="text-align:left">within [-0.5, 1.0]</td>
+        <td style="text-align:left">0.0778</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.revenue_positive</code>
+          </td>
+        <td style="text-align:left">revenue stays positive</td>
+        <td style="text-align:left">yes</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.cash_not_negative</code>
+          </td>
+        <td style="text-align:left">cash never goes negative</td>
+        <td style="text-align:left">yes</td>
+      </tr>
+    
+      <tr>
+        <td><span class="pill pass">pass</span>
+            </td>
+        <td><code>plausibility.equity_positive</code>
+          </td>
+        <td style="text-align:left">equity stays positive</td>
+        <td style="text-align:left">yes</td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+
+  <h2>Forecast accuracy, measured</h2>
+  <p class="sub">Stand at year T, fit drivers on history up to T, forecast forward, score
+    against what the company went on to report. 13 origin years.
+    The baseline is &ldquo;next year looks exactly like this year&rdquo;.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Line</th><th>Horizon</th><th>n</th><th>Model MAPE</th>
+      <th>Naive MAPE</th><th>Bias</th><th>Beats naive</th></tr></thead>
+    <tbody>
+    
+      <tr><td>revenue</td><td>1y</td><td>13</td>
+        <td>3.96%</td>
+        <td>7.76%</td>
+        <td>+0.22%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>revenue</td><td>2y</td><td>12</td>
+        <td>7.67%</td>
+        <td>14.82%</td>
+        <td>+0.98%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>revenue</td><td>3y</td><td>11</td>
+        <td>12.71%</td>
+        <td>21.74%</td>
+        <td>+1.16%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>net_income</td><td>1y</td><td>13</td>
+        <td>9.38%</td>
+        <td>10.97%</td>
+        <td>-8.95%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>net_income</td><td>2y</td><td>12</td>
+        <td>11.66%</td>
+        <td>21.12%</td>
+        <td>-11.58%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>net_income</td><td>3y</td><td>11</td>
+        <td>15.25%</td>
+        <td>30.21%</td>
+        <td>-13.99%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>total_assets</td><td>1y</td><td>13</td>
+        <td>5.65%</td>
+        <td>7.83%</td>
+        <td>-1.95%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>total_assets</td><td>2y</td><td>12</td>
+        <td>10.78%</td>
+        <td>14.52%</td>
+        <td>-2.84%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+      <tr><td>total_assets</td><td>3y</td><td>11</td>
+        <td>14.98%</td>
+        <td>21.16%</td>
+        <td>-4.29%</td>
+        <td><span class="pill pass">yes</span>
+            </td></tr>
+    
+    </tbody>
+  </table></div>
+
+  <h2>Drivers</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Driver</th><th>Base</th><th>Upside</th><th>Downside</th></tr></thead>
+    <tbody>
+    
+      <tr><td><code>revenue_growth</code></td>
+        <td>0.0778</td><td>0.0978</td><td>0.0478</td></tr>
+    
+      <tr><td><code>gross_margin</code></td>
+        <td>0.1276</td><td>0.1326</td><td>0.1176</td></tr>
+    
+      <tr><td><code>sganda_ratio</code></td>
+        <td>0.0900</td><td>0.0870</td><td>0.0950</td></tr>
+    
+      <tr><td><code>interest_rate</code></td>
+        <td>0.0278</td><td>0.0278</td><td>0.0278</td></tr>
+    
+      <tr><td><code>tax_rate</code></td>
+        <td>0.2473</td><td>0.2473</td><td>0.2473</td></tr>
+    
+      <tr><td><code>dso_days</code></td>
+        <td>4.3058</td><td>4.3058</td><td>5.3058</td></tr>
+    
+      <tr><td><code>dio_days</code></td>
+        <td>28.2874</td><td>28.2874</td><td>31.2874</td></tr>
+    
+      <tr><td><code>dpo_days</code></td>
+        <td>31.0604</td><td>31.0604</td><td>31.0604</td></tr>
+    
+      <tr><td><code>other_assets_ratio</code></td>
+        <td>0.0351</td><td>0.0351</td><td>0.0351</td></tr>
+    
+      <tr><td><code>other_liabilities_ratio</code></td>
+        <td>0.0841</td><td>0.0841</td><td>0.0841</td></tr>
+    
+      <tr><td><code>capex_intensity</code></td>
+        <td>0.0199</td><td>0.0199</td><td>0.0199</td></tr>
+    
+      <tr><td><code>depreciation_rate</code></td>
+        <td>0.0837</td><td>0.0837</td><td>0.0837</td></tr>
+    
+      <tr><td><code>payout_ratio</code></td>
+        <td>0.5970</td><td>0.5970</td><td>0.5970</td></tr>
+    
+    </tbody>
+  </table></div>
+
+  <h2>Statements</h2>
+  <p class="sub">US$ millions. Italic rows are forecast.</p>
+  <div class="scroll"><table>
+    <thead><tr><th>Year</th><th>Revenue</th><th>Gross margin</th><th>Operating income</th>
+      <th>Net income</th><th>Cash</th><th>Total assets</th><th>Equity</th>
+      <th>CFO</th><th>Capex</th><th>Balance gap</th></tr></thead>
+    <tbody>
+    
+      <tr class="">
+        <td>2009</td>
+        <td>71,422</td>
+        <td>12.72%</td>
+        <td>1,777</td>
+        <td>1,086</td>
+        <td>3,157</td>
+        <td>21,979</td>
+        <td>10,024</td>
+        <td>2,092</td>
+        <td>1,250</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2010</td>
+        <td>77,946</td>
+        <td>12.77%</td>
+        <td>2,077</td>
+        <td>1,303</td>
+        <td>3,214</td>
+        <td>23,815</td>
+        <td>10,829</td>
+        <td>2,780</td>
+        <td>1,055</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2011</td>
+        <td>88,915</td>
+        <td>12.57%</td>
+        <td>2,439</td>
+        <td>1,462</td>
+        <td>4,009</td>
+        <td>26,761</td>
+        <td>12,002</td>
+        <td>3,198</td>
+        <td>1,290</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2012</td>
+        <td>99,137</td>
+        <td>12.42%</td>
+        <td>2,759</td>
+        <td>1,709</td>
+        <td>3,528</td>
+        <td>27,140</td>
+        <td>12,361</td>
+        <td>3,057</td>
+        <td>1,480</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2013</td>
+        <td>105,156</td>
+        <td>12.56%</td>
+        <td>3,053</td>
+        <td>2,039</td>
+        <td>4,644</td>
+        <td>30,283</td>
+        <td>10,833</td>
+        <td>3,437</td>
+        <td>2,083</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2014</td>
+        <td>112,640</td>
+        <td>12.59%</td>
+        <td>3,220</td>
+        <td>2,058</td>
+        <td>5,738</td>
+        <td>33,024</td>
+        <td>12,303</td>
+        <td>3,984</td>
+        <td>1,993</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2015</td>
+        <td>116,199</td>
+        <td>13.02%</td>
+        <td>3,624</td>
+        <td>2,377</td>
+        <td>4,801</td>
+        <td>33,017</td>
+        <td>10,617</td>
+        <td>4,285</td>
+        <td>2,393</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2016</td>
+        <td>118,719</td>
+        <td>13.32%</td>
+        <td>3,672</td>
+        <td>2,350</td>
+        <td>3,379</td>
+        <td>33,163</td>
+        <td>12,079</td>
+        <td>3,292</td>
+        <td>2,649</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2017</td>
+        <td>129,025</td>
+        <td>13.29%</td>
+        <td>4,111</td>
+        <td>2,679</td>
+        <td>4,546</td>
+        <td>36,347</td>
+        <td>10,778</td>
+        <td>6,726</td>
+        <td>2,502</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2018</td>
+        <td>141,576</td>
+        <td>13.01%</td>
+        <td>4,480</td>
+        <td>3,134</td>
+        <td>6,055</td>
+        <td>40,830</td>
+        <td>12,799</td>
+        <td>5,774</td>
+        <td>2,969</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2019</td>
+        <td>152,703</td>
+        <td>12.98%</td>
+        <td>4,737</td>
+        <td>3,659</td>
+        <td>8,384</td>
+        <td>45,400</td>
+        <td>15,243</td>
+        <td>6,356</td>
+        <td>2,998</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2020</td>
+        <td>166,761</td>
+        <td>13.09%</td>
+        <td>5,435</td>
+        <td>4,002</td>
+        <td>12,277</td>
+        <td>55,556</td>
+        <td>18,284</td>
+        <td>8,861</td>
+        <td>2,810</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2021</td>
+        <td>195,929</td>
+        <td>12.88%</td>
+        <td>6,708</td>
+        <td>5,007</td>
+        <td>11,258</td>
+        <td>59,268</td>
+        <td>17,564</td>
+        <td>8,958</td>
+        <td>3,588</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2022</td>
+        <td>226,954</td>
+        <td>12.15%</td>
+        <td>7,793</td>
+        <td>5,844</td>
+        <td>10,203</td>
+        <td>64,166</td>
+        <td>20,642</td>
+        <td>7,392</td>
+        <td>3,891</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2023</td>
+        <td>242,290</td>
+        <td>12.26%</td>
+        <td>8,114</td>
+        <td>6,292</td>
+        <td>13,700</td>
+        <td>68,994</td>
+        <td>25,058</td>
+        <td>11,068</td>
+        <td>4,323</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2024</td>
+        <td>254,453</td>
+        <td>12.61%</td>
+        <td>9,285</td>
+        <td>7,367</td>
+        <td>9,906</td>
+        <td>69,831</td>
+        <td>23,622</td>
+        <td>11,339</td>
+        <td>4,710</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2025</td>
+        <td>275,235</td>
+        <td>12.84%</td>
+        <td>10,383</td>
+        <td>8,099</td>
+        <td>14,161</td>
+        <td>77,099</td>
+        <td>29,164</td>
+        <td>13,335</td>
+        <td>5,498</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="">
+        <td>2026</td>
+        <td>303,154</td>
+        <td>12.82%</td>
+        <td>11,685</td>
+        <td>9,226</td>
+        <td>20,207</td>
+        <td>89,045</td>
+        <td>35,803</td>
+        <td>15,817</td>
+        <td>6,435</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="fc">
+        <td>2027</td>
+        <td>326,730</td>
+        <td>12.76%</td>
+        <td>12,281</td>
+        <td>9,162</td>
+        <td>18,554</td>
+        <td>95,135</td>
+        <td>39,495</td>
+        <td>10,320</td>
+        <td>6,503</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="fc">
+        <td>2028</td>
+        <td>352,140</td>
+        <td>12.76%</td>
+        <td>13,236</td>
+        <td>9,881</td>
+        <td>19,917</td>
+        <td>103,140</td>
+        <td>43,477</td>
+        <td>14,271</td>
+        <td>7,009</td>
+        <td>0.00</td>
+      </tr>
+    
+      <tr class="fc">
+        <td>2029</td>
+        <td>379,526</td>
+        <td>12.76%</td>
+        <td>14,265</td>
+        <td>10,655</td>
+        <td>21,446</td>
+        <td>111,769</td>
+        <td>47,771</td>
+        <td>15,445</td>
+        <td>7,554</td>
+        <td>0.00</td>
+      </tr>
+    
+    </tbody>
+  </table></div>
+
+  
+  <h2>What the forecast rests on &mdash; terminal net income</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Driver</th><th>Shock</th><th>Down</th><th>Up</th><th>Swing</th><th></th></tr></thead>
+    <tbody>
+    
+      <tr><td><code>gross_margin</code></td>
+        <td>&plusmn;0.01</td>
+        <td>7,799</td>
+        <td>13,512</td>
+        <td>53.6%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:100.0%"></span></td></tr>
+    
+      <tr><td><code>sganda_ratio</code></td>
+        <td>&plusmn;0.005</td>
+        <td>12,084</td>
+        <td>9,227</td>
+        <td>26.8%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:50.000000000000014%"></span></td></tr>
+    
+      <tr><td><code>revenue_growth</code></td>
+        <td>&plusmn;0.02</td>
+        <td>10,069</td>
+        <td>11,264</td>
+        <td>11.2%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:20.926888388737584%"></span></td></tr>
+    
+      <tr><td><code>dio_days</code></td>
+        <td>&plusmn;5.0</td>
+        <td>10,655</td>
+        <td>10,655</td>
+        <td>0.0%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:0.0%"></span></td></tr>
+    
+      <tr><td><code>dpo_days</code></td>
+        <td>&plusmn;5.0</td>
+        <td>10,655</td>
+        <td>10,655</td>
+        <td>0.0%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:0.0%"></span></td></tr>
+    
+      <tr><td><code>capex_intensity</code></td>
+        <td>&plusmn;0.005</td>
+        <td>10,655</td>
+        <td>10,655</td>
+        <td>0.0%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:0.0%"></span></td></tr>
+    
+    </tbody>
+  </table></div>
+  
+  <h2>What the forecast rests on &mdash; terminal cash</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Driver</th><th>Shock</th><th>Down</th><th>Up</th><th>Swing</th><th></th></tr></thead>
+    <tbody>
+    
+      <tr><td><code>capex_intensity</code></td>
+        <td>&plusmn;0.005</td>
+        <td>26,328</td>
+        <td>16,564</td>
+        <td>45.5%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:100.0%"></span></td></tr>
+    
+      <tr><td><code>dio_days</code></td>
+        <td>&plusmn;5.0</td>
+        <td>25,982</td>
+        <td>16,910</td>
+        <td>42.3%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:92.89628080472912%"></span></td></tr>
+    
+      <tr><td><code>dpo_days</code></td>
+        <td>&plusmn;5.0</td>
+        <td>16,910</td>
+        <td>25,982</td>
+        <td>42.3%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:92.89628080472896%"></span></td></tr>
+    
+      <tr><td><code>gross_margin</code></td>
+        <td>&plusmn;0.01</td>
+        <td>18,264</td>
+        <td>24,628</td>
+        <td>29.7%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:65.1638031869102%"></span></td></tr>
+    
+      <tr><td><code>sganda_ratio</code></td>
+        <td>&plusmn;0.005</td>
+        <td>23,051</td>
+        <td>19,841</td>
+        <td>15.0%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:32.87718274061198%"></span></td></tr>
+    
+      <tr><td><code>revenue_growth</code></td>
+        <td>&plusmn;0.02</td>
+        <td>20,836</td>
+        <td>22,083</td>
+        <td>5.8%</td>
+        <td style="width:40%"><span class="bar"
+          style="width:12.769668926076788%"></span></td></tr>
+    
+    </tbody>
+  </table></div>
+  
+
+  <h2>Sources</h2>
+  <div class="scroll"><table>
+    <thead><tr><th>Source</th><th>Status</th><th>Bytes</th><th>SHA-256</th></tr></thead>
+    <tbody>
+    
+      <tr><td><code>companyfacts:909832</code></td><td>200</td>
+        <td>3,694,553</td>
+        <td><code style="color:var(--muted)">b675ced201b27ede</code></td></tr>
+    
+    </tbody>
+  </table></div>
+
+  <footer>Built from SEC EDGAR XBRL company facts. Every figure on this page is
+  computed by the run that generated it. Not investment advice.</footer>
+</div></body></html>
